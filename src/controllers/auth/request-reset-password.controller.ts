@@ -42,6 +42,13 @@ export const requestResetPassword = async (req: Request, res: Response) => {
       await sendOtpEmail(normalizedEmail, otp, "RESET_PASSWORD");
     } catch (mailError) {
       console.error("Gagal mengirim OTP reset password:", mailError);
+
+      return errorResponse(
+        res, 
+        "Gagal mengirim OTP reset password ke email. Silakan coba lagi nanti.", 
+        500
+      );
+
     }
 
     return successResponse(res, "OTP reset password berhasil dikirim ke email.", {

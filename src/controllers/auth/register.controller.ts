@@ -90,6 +90,12 @@ export const register = async (req: Request, res: Response) => {
         await sendOtpEmail(normalizedEmail, otp, "VERIFY_EMAIL");
     } catch (mailError) {
         console.error("Gagal mengirim OTP ke email:", mailError);
+
+        return errorResponse(
+          res, 
+          "Gagal mengirim OTP ke email. Silakan coba lagi nanti.", 
+          500
+        );
     }
 
     return successResponse(
