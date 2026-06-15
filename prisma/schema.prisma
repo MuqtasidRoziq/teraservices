@@ -211,6 +211,16 @@ model ScreeningQuestion {
   orderNumber Int
   isActive    Boolean         @default(true)
 
+  // Tambahan untuk filter berdasarkan usia anak
+  minAgeYears Int?
+  maxAgeYears Int?
+
+  // Opsional untuk mencatat sumber pertanyaan dari jurnal/referensi
+  sourceAuthor String?
+  sourceYear   Int?
+  sourceTitle  String?
+  sourceUrl    String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -219,6 +229,7 @@ model ScreeningQuestion {
 
   @@index([domain])
   @@index([orderNumber])
+  @@index([minAgeYears, maxAgeYears])
 }
 
 model ScreeningOption {
@@ -243,18 +254,28 @@ model ScreeningSession {
   progressCurrentStep Int @default(0)
   progressTotalStep   Int @default(0)
 
-  totalScore Int @default(0)
+  // Skor mentah
+  rawTotalScore Int @default(0)
 
   communicationSpeechScore     Int @default(0)
   physicalMotorScore           Int @default(0)
   cognitiveProblemSolvingScore Int @default(0)
   socialEmotionalScore         Int @default(0)
 
+  // Persentase per domain
+  communicationSpeechPercentage     Float @default(0)
+  physicalMotorPercentage           Float @default(0)
+  cognitiveProblemSolvingPercentage Float @default(0)
+  socialEmotionalPercentage         Float @default(0)
+
+  // Hasil akhir SAW dalam persen
+  finalScore Float @default(0)
+
   mainIndication     IndicationType?
   indicationSummary  String?
   resultDescription  String?
   recommendationText String?
-  disclaimerText     String          @default("Hasil screening ini bukan diagnosis final dan tidak menggantikan pemeriksaan profesional.")
+  disclaimerText     String @default("Hasil screening ini bukan diagnosis final dan tidak menggantikan pemeriksaan profesional.")
 
   startedAt   DateTime  @default(now())
   completedAt DateTime?

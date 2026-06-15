@@ -1,0 +1,18 @@
+import type { DomainKey } from "../types/screeningType.js";
+
+export const DOMAIN_WEIGHTS: Record<DomainKey, number> = {
+  COMMUNICATION_SPEECH: 0.25,
+  PHYSICAL_MOTOR: 0.25,
+  COGNITIVE_PROBLEM_SOLVING: 0.25,
+  SOCIAL_EMOTIONAL: 0.25,
+};
+
+export const DOMAIN_LABELS: Record<DomainKey, string> = {
+  COMMUNICATION_SPEECH: "Komunikasi dan Bicara",
+  PHYSICAL_MOTOR: "Fisik dan Motorik",
+  COGNITIVE_PROBLEM_SOLVING: "Kognitif dan Pemecahan Masalah",
+  SOCIAL_EMOTIONAL: "Sosial Emosional",
+};
+
+export const SCREENING_DISCLAIMER =
+  "Hasil screening ini bukan diagnosis final dan tidak menggantikan pemeriksaan profesional.";

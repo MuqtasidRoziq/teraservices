@@ -104,8 +104,8 @@ export const createChild = async (req: AuthRequest, res: Response) => {
     const child = await prisma.$transaction(async (tx) => {
       const createdChild = await tx.child.create({
         data: {
-          userId: String(req.user!.id),
-          name: String(name),
+          userId: req.user!.id,
+          name: name,
           birthDate: parsedBirthDate,
           ageYear: finalAgeYear,
           gender: normalizedGender,
@@ -130,7 +130,7 @@ export const createChild = async (req: AuthRequest, res: Response) => {
       return createdChild;
     });
 
-    return successResponse(res, "Data anak berhasil disimpan", child, 201);
+    return successResponse(res, "Data anak berhasil disimpan", child);
   } catch (error) {
     console.error("CREATE CHILD ERROR:", error);
     return errorResponse(res, "Terjadi kesalahan pada server", 500);
@@ -145,7 +145,7 @@ export const getMyChildren = async (req: AuthRequest, res: Response) => {
 
     const children = await prisma.child.findMany({
       where: {
-        userId: String(req.user!.id),
+        userId: req.user!.id,
       },
       orderBy: {
         createdAt: "desc",
@@ -179,16 +179,16 @@ export const getChildById = async (req: AuthRequest, res: Response) => {
       return errorResponse(res, "User tidak terautentikasi", 401);
     }
 
-    const childId = Number(req.params.id);
+    const childId = req.params.id;
 
-    if (Number.isNaN(childId)) {
-      return errorResponse(res, "ID anak tidak valid", 400);
+    if (!childId) {
+      return errorResponse(res, "ID anak wajib diisi", 400);
     }
 
     const child = await prisma.child.findFirst({
       where: {
         id: String(childId),
-        userId: String(req.user!.id),
+        userId: req.user.id,
       },
       include: {
         growthRecords: {
