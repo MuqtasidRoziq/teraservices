@@ -1,5 +1,6 @@
 import type { DomainKey, MainIndication, RiskCategory } from "../types/screeningType.js";
 import { DOMAIN_LABELS, SCREENING_DISCLAIMER } from "../constants/screeningConstant.js";
+import prisma from "../lib/prisma.js";
 
 export const getRiskCategory = (finalScore: number): RiskCategory => {
   if (finalScore <= 40) return "Risiko Rendah";
@@ -121,4 +122,41 @@ export const getResultDescription = (
   const priorityDomain = priorityDomains[0];
 
   return `Berdasarkan hasil perhitungan screening menggunakan metode SAW, skor akhir anak adalah ${finalScore}%. Kategori hasil adalah ${category}. Domain dengan persentase tertinggi adalah ${DOMAIN_LABELS[priorityDomain]} sebesar ${domainPercentages[priorityDomain]}%. ${SCREENING_DISCLAIMER}`;
+};
+
+export const getScreeningQuestionsByAgeMonth = async (ageMonth: number) => {
+  return prisma.screeningQuestion.findMany({
+    where: {
+      isActive: true,
+      AND: [
+        {
+          OR: [
+            { minAgeMonth: null },
+            { minAgeMonth: { lte: ageMonth } },
+          ],
+        },
+        {
+          OR: [
+            { maxAgeMonth: null },
+            { maxAgeMonth: { gte: ageMonth } },
+          ],
+        },
+      ],
+    },
+    include: {
+      options: {
+        orderBy: {
+          orderNumber: "asc",
+        },
+      },
+    },
+    orderBy: [
+      {
+        domain: "asc",
+      },
+      {
+        orderNumber: "asc",
+      },
+    ],
+  });
 };

@@ -2,6 +2,7 @@ import {Response} from 'express';
 import prisma from '../lib/prisma.js';
 import {successResponse, errorResponse} from '../utils/response.js';
 import { AuthRequest } from '../middlewares/authMiddleware.js';
+import { calculateChildAge } from '../helper/childAgeHelper.js';
 
 const normalizeGender = (gender: string) => {
   const value = gender.toUpperCase().trim();
@@ -17,23 +18,15 @@ const normalizeGender = (gender: string) => {
   return null;
 };
 
-const calculateAgeYear = (birthDate: Date) => {
-  const today = new Date();
-
-  let ageYear = today.getFullYear() - birthDate.getFullYear();
-
-  return ageYear;
-};
-
 export const createChild = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
       return errorResponse(res, "User tidak terautentikasi", 401);
     }
 
-    const { name, birthDate, ageYear, gender, heightCm, weightKg, initialDevelopmentNote,photo } = req.body ?? {};
+    const { name, birthDate, gender, heightCm, weightKg, initialDevelopmentNote,photo } = req.body ?? {};
 
-    if (!name || !gender || heightCm === undefined || weightKg === undefined || ageYear === undefined || birthDate === undefined) {
+    if (!name || !gender || heightCm === undefined || weightKg === undefined || birthDate === undefined) {
       return errorResponse(
         res,
         "Nama anak, jenis kelamin, tanggal lahir, usia, tinggi badan, dan berat badan wajib diisi",
@@ -70,35 +63,27 @@ export const createChild = async (req: AuthRequest, res: Response) => {
         );
     }
 
-    let parsedBirthDate: Date | null = null;
-    let finalAgeYear: number | null = null;
+    const parsedBirthDate = new Date(String(birthDate));
 
-    if (birthDate) {
-      parsedBirthDate = new Date(String(birthDate));
+    if (Number.isNaN(parsedBirthDate.getTime())) {
+      return errorResponse(res, "Tanggal lahir tidak valid", 400);
+    }
+    if (parsedBirthDate > new Date()) {
+      return errorResponse(
+        res,
+        "Tanggal lahir tidak boleh melebihi tanggal hari ini",
+        400
+      );
+    }
 
-      if (Number.isNaN(parsedBirthDate.getTime())) {
-        return errorResponse(
-          res,
-          "Format tanggal lahir tidak valid. Gunakan format YYYY-MM-DD",
-          400
-        );
-      }
+    const age = calculateChildAge(parsedBirthDate);
 
-      if (parsedBirthDate > new Date()) {
-        return errorResponse(
-          res,
-          "Tanggal lahir tidak boleh melebihi tanggal hari ini",
-          400
-        );
-      }
-
-      finalAgeYear = calculateAgeYear(parsedBirthDate);
-    } else {
-      finalAgeYear = Number(ageYear);
-
-      if (Number.isNaN(finalAgeYear) || finalAgeYear < 0) {
-        return errorResponse(res, "Usia anak harus berupa angka positif", 400);
-      }
+    if (age.ageMonth < 12 || age.ageMonth > 60) {
+      return errorResponse(
+        res,
+        "Usia anak harus berada pada rentang 1 sampai 5 tahun",
+        400
+      );
     }
 
     const child = await prisma.$transaction(async (tx) => {
@@ -107,7 +92,6 @@ export const createChild = async (req: AuthRequest, res: Response) => {
           userId: req.user!.id,
           name: name,
           birthDate: parsedBirthDate,
-          ageYear: finalAgeYear,
           gender: normalizedGender,
           heightCm: parsedHeight,
           weightKg: parsedWeight,
@@ -160,10 +144,31 @@ export const getMyChildren = async (req: AuthRequest, res: Response) => {
       },
     });
 
+    const childrenWithAge = children.map((child)=> {
+      if (!child.birthDate){
+        return{
+          ...child,
+          ageYear:null,
+          ageMonth:null,
+          ageText:null
+        };
+      }
+
+      const age = calculateChildAge(child.birthDate);
+
+      return{
+        ...child,
+        ageYear:age.ageYear,
+        ageMonth:age.ageMonth,
+        ageText:age.ageText
+      }
+
+    });
+
     return successResponse(
         res, 
         "Data anak berhasil diambil", 
-        children);
+        childrenWithAge);
   } catch (error) {
     console.error("GET MY CHILDREN ERROR:", error);
     return errorResponse(
@@ -209,7 +214,20 @@ export const getChildById = async (req: AuthRequest, res: Response) => {
       return errorResponse(res, "Data anak tidak ditemukan", 404);
     }
 
-    return successResponse(res, "Detail anak berhasil diambil", child);
+    const age = child.birthDate ? calculateChildAge(child.birthDate) :
+    {
+      ageYear:null,
+      ageMonth:null,
+      ageText:null
+    };
+
+    return successResponse(res, "Detail anak berhasil diambil", {
+      ...child,
+      ageYear:age.ageText,
+      ageMonth:age.ageMonth,
+      ageText:age.ageText
+    });
+
   } catch (error) {
     console.error("GET CHILD BY ID ERROR:", error);
     return errorResponse(res, "Terjadi kesalahan pada server", 500);

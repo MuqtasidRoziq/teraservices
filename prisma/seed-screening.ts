@@ -5,10 +5,6 @@ type ScoringType = "RISK" | "PROTECTIVE";
 
 const EXCEL_PATH = "prisma/data/screening_questions.xlsx";
 
-// Karena target aplikasi Mas Roziq 2–6 tahun,
-// sheet usia 1 tahun tidak di-import dulu.
-const TARGET_MIN_AGE_YEAR = 1;
-
 const domainMap: Record<string, string> = {
   Komunikasi: "COMMUNICATION_SPEECH",
   Fisik: "PHYSICAL_MOTOR",
@@ -72,6 +68,19 @@ const getAgeYearFromSheetName = (sheetName: string) => {
   return Number(match[1]);
 };
 
+const getAgeMonthRange = (ageYear: number) => {
+  const minAgeMonth = ageYear * 12;
+
+  // Kalau usia 5 tahun mau sampai tepat 6 tahun, pakai 72.
+  // Kalau hanya sampai sebelum 6 tahun, ganti 72 menjadi 71.
+  const maxAgeMonth = ageYear === 5 ? 72 : ageYear * 12 + 11;
+
+  return {
+    minAgeMonth,
+    maxAgeMonth,
+  };
+};
+
 async function main() {
   const workbook = xlsx.readFile(EXCEL_PATH);
 
@@ -86,13 +95,7 @@ async function main() {
       continue;
     }
 
-    if (ageYear < TARGET_MIN_AGE_YEAR) {
-      console.log(`Lewati sheet usia ${ageYear} tahun`);
-      continue;
-    }
-
-    const minAgeYears = ageYear;
-    const maxAgeYears = ageYear === 5 ? 6 : ageYear;
+    const { minAgeMonth, maxAgeMonth } = getAgeMonthRange(ageYear);
 
     const sheet = workbook.Sheets[sheetName];
 
@@ -105,7 +108,8 @@ async function main() {
     });
 
     let currentDomain = "";
-    let orderPerDomain: Record<string, number> = {
+
+    const orderPerDomain: Record<string, number> = {
       COMMUNICATION_SPEECH: 0,
       PHYSICAL_MOTOR: 0,
       COGNITIVE_PROBLEM_SOLVING: 0,
@@ -147,8 +151,8 @@ async function main() {
         where: {
           question: questionText,
           domain: domainCode as any,
-          minAgeYears,
-          maxAgeYears,
+          minAgeMonth,
+          maxAgeMonth,
         },
       });
 
@@ -166,8 +170,8 @@ async function main() {
             isRequired: true,
             orderNumber: orderPerDomain[domainCode],
             isActive: true,
-            minAgeYears,
-            maxAgeYears,
+            minAgeMonth,
+            maxAgeMonth,
           },
         });
 
@@ -185,8 +189,8 @@ async function main() {
             isRequired: true,
             orderNumber: orderPerDomain[domainCode],
             isActive: true,
-            minAgeYears,
-            maxAgeYears,
+            minAgeMonth,
+            maxAgeMonth,
           },
         });
 
@@ -208,7 +212,9 @@ async function main() {
       totalOptions += options.length;
     }
 
-    console.log(`Selesai import sheet: ${sheetName}`);
+    console.log(
+      `Selesai import sheet: ${sheetName} (${minAgeMonth}-${maxAgeMonth} bulan)`
+    );
   }
 
   console.log("Import screening selesai.");

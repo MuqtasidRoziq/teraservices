@@ -168,7 +168,6 @@ model Child {
   userId                 String    @db.Uuid
   name                   String
   birthDate              DateTime?
-  ageYear                Int?
   gender                 Gender
   heightCm               Float
   weightKg               Float
@@ -207,19 +206,11 @@ model ScreeningQuestion {
   domain      ScreeningDomain
   question    String
   type        QuestionType
+  minAgeMonth Int?
+  maxAgeMonth Int?
   isRequired  Boolean         @default(true)
   orderNumber Int
   isActive    Boolean         @default(true)
-
-  // Tambahan untuk filter berdasarkan usia anak
-  minAgeYears Int?
-  maxAgeYears Int?
-
-  // Opsional untuk mencatat sumber pertanyaan dari jurnal/referensi
-  sourceAuthor String?
-  sourceYear   Int?
-  sourceTitle  String?
-  sourceUrl    String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -229,7 +220,7 @@ model ScreeningQuestion {
 
   @@index([domain])
   @@index([orderNumber])
-  @@index([minAgeYears, maxAgeYears])
+  @@index([minAgeMonth, maxAgeMonth])
 }
 
 model ScreeningOption {
@@ -316,8 +307,8 @@ model ActivityTemplate {
   domain            ScreeningDomain
   relatedIndication IndicationType?
 
-  minAgeMonths Int?
-  maxAgeMonths Int?
+  minAgeMonth Int?
+  maxAgeMonth Int?
 
   description     String
   purpose         String

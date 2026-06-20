@@ -4,6 +4,7 @@ import { successResponse, errorResponse } from "../utils/response.js";
 import { AuthRequest } from "../middlewares/authMiddleware.js";
 import type { AnswerInput, DomainKey } from "../types/screeningType.js";
 import { DOMAIN_LABELS, DOMAIN_WEIGHTS } from "../constants/screeningConstant.js";
+import { calculateChildAge } from "../helper/childAgeHelper.js";
 import {
   getRiskCategory,
   getPriorityDomains,
@@ -11,6 +12,7 @@ import {
   getIndicationSummary,
   getGeneralRecommendationText,
   getResultDescription,
+  getScreeningQuestionsByAgeMonth,
 } from "../helper/screeningHelper.js";
 
 
@@ -40,50 +42,23 @@ export const getScreeningQuestionsByChild = async (
       return errorResponse(res, "Data anak tidak ditemukan", 404);
     }
 
-    if (child.ageYear === null || child.ageYear === undefined) {
-      return errorResponse(res, "Usia anak belum tersedia", 400);
+    if (!child.birthDate) {
+      return errorResponse(res, "Tanggal lahir anak belum tersedia", 400);
     }
 
-    const questions = await prisma.screeningQuestion.findMany({
-      where: {
-        isActive: true,
-        AND: [
-          {
-            OR: [
-              { minAgeYears: null },
-              { minAgeYears: { lte: child.ageYear } },
-            ],
-          },
-          {
-            OR: [
-              { maxAgeYears: null },
-              { maxAgeYears: { gte: child.ageYear } },
-            ],
-          },
-        ],
-      },
-      include: {
-        options: {
-          orderBy: {
-            orderNumber: "asc",
-          },
-        },
-      },
-      orderBy: [
-        {
-          domain: "asc",
-        },
-        {
-          orderNumber: "asc",
-        },
-      ],
-    });
+    const age = calculateChildAge(child.birthDate);
+    const childAgeMonth = age.ageMonth;
+
+    const questions = await getScreeningQuestionsByAgeMonth(childAgeMonth);
 
     return successResponse(res, "Pertanyaan screening berhasil diambil", {
       child: {
         id: child.id,
         name: child.name,
-        ageYear: child.ageYear,
+        birthDate: child.birthDate,
+        ageYear: age.ageYear,
+        ageMonth: age.ageMonth,
+        ageText: age.ageText,
       },
       totalQuestions: questions.length,
       questions,
@@ -117,44 +92,14 @@ export const startScreening = async (req: AuthRequest, res: Response) => {
       return errorResponse(res, "Data anak tidak ditemukan", 404);
     }
 
-    if (child.ageYear === null || child.ageYear === undefined) {
-      return errorResponse(res, "Usia anak belum tersedia", 400);
+    if (!child.birthDate) {
+      return errorResponse(res, "Tanggal lahir anak belum tersedia", 400);
     }
 
-    const questions = await prisma.screeningQuestion.findMany({
-      where: {
-        isActive: true,
-        AND: [
-          {
-            OR: [
-              { minAgeYears: null },
-              { minAgeYears: { lte: child.ageYear } },
-            ],
-          },
-          {
-            OR: [
-              { maxAgeYears: null },
-              { maxAgeYears: { gte: child.ageYear } },
-            ],
-          },
-        ],
-      },
-      include: {
-        options: {
-          orderBy: {
-            orderNumber: "asc",
-          },
-        },
-      },
-      orderBy: [
-        {
-          domain: "asc",
-        },
-        {
-          orderNumber: "asc",
-        },
-      ],
-    });
+    const age = calculateChildAge(child.birthDate);
+    const childAgeMonth = age.ageMonth;
+
+    const questions = await getScreeningQuestionsByAgeMonth(childAgeMonth);
 
     if (questions.length === 0) {
       return errorResponse(
@@ -181,7 +126,10 @@ export const startScreening = async (req: AuthRequest, res: Response) => {
         child: {
           id: child.id,
           name: child.name,
-          ageYear: child.ageYear,
+          birthDate: child.birthDate,
+          ageYear: age.ageYear,
+          ageMonth: age.ageMonth,
+          ageText: age.ageText,
         },
         totalQuestions: questions.length,
         questions,
@@ -231,11 +179,31 @@ export const submitScreening = async (req: AuthRequest, res: Response) => {
       return errorResponse(res, "Sesi screening sudah selesai", 400);
     }
 
+    if (!session.child.birthDate) {
+      return errorResponse(res, "Tanggal lahir anak belum tersedia", 400);
+    }
+
+    const age = calculateChildAge(session.child.birthDate);
+    const allowedQuestions = await getScreeningQuestionsByAgeMonth(age.ageMonth);
+    const allowedQuestionIds = allowedQuestions.map((question) => question.id);
+
     const questionIds = answers.map((item: AnswerInput) =>
       String(item.questionId)
     );
 
     const uniqueQuestionIds = [...new Set(questionIds)];
+
+    const hasInvalidAgeQuestion = uniqueQuestionIds.some(
+      (questionId) => !allowedQuestionIds.includes(questionId)
+    );
+
+    if (hasInvalidAgeQuestion) {
+      return errorResponse(
+        res,
+        "Terdapat pertanyaan yang tidak sesuai dengan usia anak",
+        400
+      );
+    }
 
     if (uniqueQuestionIds.length !== answers.length) {
       return errorResponse(
@@ -245,13 +213,10 @@ export const submitScreening = async (req: AuthRequest, res: Response) => {
       );
     }
 
-    if (
-      session.progressTotalStep > 0 &&
-      answers.length < session.progressTotalStep
-    ) {
+    if (answers.length !== allowedQuestions.length) {
       return errorResponse(
         res,
-        `Jawaban belum lengkap. Total pertanyaan adalah ${session.progressTotalStep}, tetapi jawaban yang dikirim hanya ${answers.length}.`,
+        `Jawaban belum lengkap. Total pertanyaan adalah ${allowedQuestions.length}, tetapi jawaban yang dikirim ${answers.length}.`,
         400
       );
     }
@@ -571,7 +536,7 @@ export const getScreeningHistoryByChild = async (
 
     const histories = await prisma.screeningSession.findMany({
       where: {
-        id:String(childId),
+        childId: String(childId),
       },
       orderBy: {
         createdAt: "desc",
