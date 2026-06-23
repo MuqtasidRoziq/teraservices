@@ -116,7 +116,7 @@ export const getResultDescription = (
       .map((domain) => `${DOMAIN_LABELS[domain]} sebesar ${domainPercentages[domain]}%`)
       .join(", ");
 
-    return `Berdasarkan hasil perhitungan screening menggunakan metode SAW, skor akhir anak adalah ${finalScore}%. Kategori hasil adalah ${category}. Risiko terlihat pada beberapa domain perkembangan, yaitu ${domainLabels}. ${SCREENING_DISCLAIMER}`;
+    return `Berdasarkan hasil perhitungan screening, skor akhir anak adalah ${finalScore}%. Kategori hasil adalah ${category}. Risiko terlihat pada beberapa domain perkembangan, yaitu ${domainLabels}.`;
   }
 
   const priorityDomain = priorityDomains[0];
