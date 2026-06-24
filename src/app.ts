@@ -1,5 +1,4 @@
 import express, { Application, Request, Response } from "express";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import authRoutes from "./routes/authRoutes.js";
 import cors from "cors";
 import helmet from "helmet";
@@ -8,7 +7,6 @@ import { childRouter } from "./routes/childRoutes.js";
 import screeningRouter from "./routes/screeningRoutes.js";
 
 const app: Application = express();
-SpeedInsights
 
 app.use(helmet());
 app.use(cors());
