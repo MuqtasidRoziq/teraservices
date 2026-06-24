@@ -121,7 +121,7 @@ export const getResultDescription = (
 
   const priorityDomain = priorityDomains[0];
 
-  return `Berdasarkan hasil perhitungan screening menggunakan metode SAW, skor akhir anak adalah ${finalScore}%. Kategori hasil adalah ${category}. Domain dengan persentase tertinggi adalah ${DOMAIN_LABELS[priorityDomain]} sebesar ${domainPercentages[priorityDomain]}%. ${SCREENING_DISCLAIMER}`;
+  return `Berdasarkan hasil perhitungan screening, skor akhir anak adalah ${finalScore}%. Kategori hasil adalah ${category}. Domain dengan persentase tertinggi adalah ${DOMAIN_LABELS[priorityDomain]} sebesar ${domainPercentages[priorityDomain]}%. ${SCREENING_DISCLAIMER}`;
 };
 
 export const getScreeningQuestionsByAgeMonth = async (ageMonth: number) => {
