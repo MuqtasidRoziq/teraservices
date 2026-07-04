@@ -257,3 +257,54 @@ export const updateActivityStatus = async (req: AuthRequest, res: Response) => {
     return errorResponse(res, "Gagal memperbarui aktivitas", 500);
   }
 };
+
+// Endpoint: Mengambil riwayat aktivitas anak
+export const getActivityHistory = async (req: AuthRequest, res: Response) => {
+  try {
+    const { childId } = req.params;
+    
+    // pagination params
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const status = req.query.status as string;
+
+    if (!childId) {
+      return errorResponse(res, "ID Anak wajib disertakan", 400);
+    }
+
+    const query: any = {
+      childId: String(childId),
+    };
+
+    if (status) {
+      query.status = String(status).toUpperCase();
+    }
+
+    const skip = (page - 1) * limit;
+
+    const activities = await prisma.dailyActivity.findMany({
+      where: query,
+      orderBy: { scheduledDate: "desc" },
+      skip,
+      take: limit,
+      include: {
+        note: true
+      }
+    });
+
+    const total = await prisma.dailyActivity.count({ where: query });
+
+    return successResponse(res, "Riwayat aktivitas berhasil diambil", {
+      activities,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    console.error("GET ACTIVITY HISTORY ERROR:", error);
+    return errorResponse(res, "Terjadi kesalahan server", 500);
+  }
+};
