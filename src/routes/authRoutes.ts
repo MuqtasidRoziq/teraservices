@@ -7,7 +7,7 @@ import { getMe, logout } from "../controllers/auth/getMeController.js";
 import { requestResetPassword } from "../controllers/auth/requestResetPasswordController.js";
 import { resetPassword } from "../controllers/auth/resetPasswordController.js";
 import { resendOtp } from "../controllers/auth/resendOtpController.js";
-import { getFaceEmbeddingByEmail } from "../controllers/auth/faceAuthController.js";
+import { faceLoginIdentification, registerFace } from "../controllers/auth/faceAuthController.js";
 
 const router = Router();
     
@@ -20,6 +20,7 @@ router.post("/logout", authMiddleware, logout);
 router.post("/request-reset-password", authMiddleware, requestResetPassword);
 router.post("/reset-password", authMiddleware, resetPassword);
 router.post("/request-reset-password", requestResetPassword);
-router.post("/get-face-embedding", getFaceEmbeddingByEmail);
+router.post("/register-face", authMiddleware, registerFace);
+router.post("/face-login", faceLoginIdentification);
 
 export default router;
