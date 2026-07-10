@@ -6,7 +6,9 @@ export const connectMongoDB = async () => {
         return;
     }
     try {
-        await mongoose.connect(MONGO_URI);
+        await mongoose.connect(MONGO_URI, {
+            dbName: "data_collections",
+        });
         console.log("✅ MongoDB (Atlas) terhubung");
     }
     catch (error) {

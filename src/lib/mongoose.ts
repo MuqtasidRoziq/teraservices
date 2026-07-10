@@ -9,7 +9,9 @@ export const connectMongoDB = async (): Promise<void> => {
   }
 
   try {
-    await mongoose.connect(MONGO_URI);
+    await mongoose.connect(MONGO_URI, {
+      dbName: "data_collections",
+    });
     console.log("✅ MongoDB (Atlas) terhubung");
   } catch (error) {
     console.error("❌ Gagal menghubungkan ke MongoDB:", error);
