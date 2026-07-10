@@ -47,19 +47,32 @@ export const registerFace = async (req, res) => {
         return errorResponse(res, "Terjadi kesalahan saat mendaftarkan wajah", 500);
     }
 };
-// ==========================================
-// 2. ENDPOINT LOGIN WAJAH 1:N (TANPA EMAIL)
-// ==========================================
 export const faceLoginIdentification = async (req, res) => {
     try {
         const { embedding } = req.body;
         if (!embedding || !Array.isArray(embedding)) {
             return errorResponse(res, "Data embedding wajah tidak valid", 400);
         }
-        // 1. Ambil SEMUA data wajah yang aktif beserta relasi usernya
         const faceCredentials = await prisma.faceCredential.findMany({
             where: { isActive: true },
-            include: { user: true }
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        fullName: true,
+                        email: true,
+                        isFaceRecognitionActive: true,
+                        isEmailVerified: true,
+                        children: {
+                            select: {
+                                id: true,
+                                name: true,
+                                gender: true,
+                            }
+                        }
+                    }
+                }
+            }
         });
         if (faceCredentials.length === 0) {
             return errorResponse(res, "Belum ada data wajah yang terdaftar di sistem", 404);
@@ -94,8 +107,6 @@ export const faceLoginIdentification = async (req, res) => {
                     message: "Login wajah berhasil"
                 }
             });
-            // Buat token JWT untuk masuk ke aplikasi
-            // Jika fungsimu menerima parameter obyek, sesuaikan. Misal: generateToken({ id: user.id })
             const token = generateToken({
                 id: user.id,
                 email: user.email,
@@ -105,6 +116,9 @@ export const faceLoginIdentification = async (req, res) => {
                     id: user.id,
                     fullName: user.fullName,
                     email: user.email,
+                    hasChildData: user.children.length > 0,
+                    isFaceRecognitionActive: user.isFaceRecognitionActive,
+                    isEmailVerified: user.isEmailVerified,
                 },
                 similarityDistance: minDistance,
                 token: token
