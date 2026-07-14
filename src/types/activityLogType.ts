@@ -1,8 +1,9 @@
 export type ActivityLogAction =
   | "LOGIN"
+  | "LOGIN_FACE"
   | "REGISTER"
   | "LOGOUT"
-  | "SAVE_FACE_EMBEDDING"
+  | "REGISTER_FACE"
   | "UPDATE_PROFILE"
   | "COMPLETE_ACTIVITY"
   | "SUBMIT_SCREENING";
