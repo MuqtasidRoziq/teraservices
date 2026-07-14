@@ -14,7 +14,8 @@
     "start": "node dist/src/server.js",
     "prisma": "prisma",
     "seed:screening": "tsx prisma/seed-screening.ts",
-    "seed:activity": "tsx prisma/seed-activity.ts"
+    "seed:activity": "tsx prisma/seed-activity.ts",
+    "seed:psikolog": "tsx prisma/seed-psikolog.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",

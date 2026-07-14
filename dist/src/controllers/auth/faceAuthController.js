@@ -1,6 +1,7 @@
 import prisma from "../../lib/prisma.js";
 import { successResponse, errorResponse } from "../../utils/response.js";
 import { generateToken } from "../../utils/jwt.js";
+import { logUserActivity } from "../../utils/logger.js";
 // Fungsi Matematika Euclidean Distance
 const calculateEuclideanDistance = (emb1, emb2) => {
     if (emb1.length !== emb2.length)
@@ -14,7 +15,6 @@ const calculateEuclideanDistance = (emb1, emb2) => {
 export const registerFace = async (req, res) => {
     try {
         const { embedding } = req.body;
-        // Mengambil user ID dari authMiddleware
         const userId = req.user?.id;
         if (!userId) {
             return errorResponse(res, "Akses ditolak, token tidak valid", 401);
@@ -39,6 +39,14 @@ export const registerFace = async (req, res) => {
         await prisma.user.update({
             where: { id: userId },
             data: { isFaceRecognitionActive: true }
+        });
+        logUserActivity({
+            userId: userId,
+            action: "REGISTER_FACE",
+            details: {
+                description: "User berhasil mendaftarkan wajah untuk login"
+            },
+            req: req,
         });
         return successResponse(res, "Data wajah berhasil didaftarkan");
     }
@@ -127,6 +135,14 @@ export const faceLoginIdentification = async (req, res) => {
                 },
                 similarityDistance: minDistance,
                 token: token
+            });
+            logUserActivity({
+                userId: user.id,
+                action: "LOGIN_FACE",
+                details: {
+                    description: "User berhasil login menggunakan wajah"
+                },
+                req: req,
             });
         }
         else {

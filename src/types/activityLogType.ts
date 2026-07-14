@@ -6,4 +6,5 @@ export type ActivityLogAction =
   | "REGISTER_FACE"
   | "UPDATE_PROFILE"
   | "COMPLETE_ACTIVITY"
-  | "SUBMIT_SCREENING";
+  | "SUBMIT_SCREENING"
+  | "SAVE_FACE_EMBEDDING";

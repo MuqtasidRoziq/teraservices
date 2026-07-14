@@ -9,6 +9,7 @@ import { activityRoutes } from "./routes/activityRoutes.js";
 import { grafikRoutes } from "./routes/grafikRoutes.js";
 import { userRoutes } from "./routes/userRoutes.js";
 import { articleRoutes } from "./routes/articleRoutes.js";
+import { expertRouter } from "./routes/expertRoutes.js";
 
 const app: Application = express();
 
@@ -34,6 +35,7 @@ app.use("/api/activities", activityRoutes);
 app.use("/api/grafik", grafikRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/articles", articleRoutes);
+app.use("/api/psikolog", expertRouter);
 
 app.use((_req: Request, res: Response) => {
   res.status(404).json({
