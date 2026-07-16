@@ -30,7 +30,6 @@ app.use("/api/activities", activityRoutes);
 app.use("/api/grafik", grafikRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/articles", articleRoutes);
-app.use("/api/experts", expertRouter);
 app.use("/api/psikolog", expertRouter);
 app.use((_req, res) => {
     res.status(404).json({

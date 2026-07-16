@@ -8,28 +8,24 @@ export const getAllExperts = async (req, res) => {
         const skip = (page - 1) * limit;
         const { search, type, city, isActive } = req.query;
         const whereClause = {};
-        // Filter by type (enum ExpertType)
         if (type) {
             const typeStr = String(type).toUpperCase();
             if (["PSYCHOLOGIST", "PSYCHIATRIST", "THERAPIST"].includes(typeStr)) {
                 whereClause.type = typeStr;
             }
         }
-        // Filter by city
         if (city) {
             whereClause.city = {
                 contains: String(city),
                 mode: "insensitive"
             };
         }
-        // Filter by active status (default only show active experts)
         if (isActive !== undefined) {
             whereClause.isActive = String(isActive) === "true";
         }
         else {
             whereClause.isActive = true;
         }
-        // Search query: searches in name, specialization, city, and practiceAddress
         if (search) {
             const searchStr = String(search);
             whereClause.OR = [
