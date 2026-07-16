@@ -13,7 +13,6 @@ export const getAllExperts = async (req: Request, res: Response) => {
 
     const whereClause: any = {};
 
-    // Filter by type (enum ExpertType)
     if (type) {
       const typeStr = String(type).toUpperCase();
       if (["PSYCHOLOGIST", "PSYCHIATRIST", "THERAPIST"].includes(typeStr)) {
@@ -21,7 +20,6 @@ export const getAllExperts = async (req: Request, res: Response) => {
       }
     }
 
-    // Filter by city
     if (city) {
       whereClause.city = {
         contains: String(city),
@@ -29,14 +27,12 @@ export const getAllExperts = async (req: Request, res: Response) => {
       };
     }
 
-    // Filter by active status (default only show active experts)
     if (isActive !== undefined) {
       whereClause.isActive = String(isActive) === "true";
     } else {
       whereClause.isActive = true;
     }
 
-    // Search query: searches in name, specialization, city, and practiceAddress
     if (search) {
       const searchStr = String(search);
       whereClause.OR = [
